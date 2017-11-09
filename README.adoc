@@ -1,15 +1,15 @@
 = Building Classic Phantasy Star Games on Linux
 
 This script makes it (super) easy to build the
-assebly of (https://en.wikipedia.org/wiki/Phantasy_Star)[Phantasy Star
-games] for (http://segaretro.org/Sega_Mega_Drive)[Mega Drive / Genesis].
+assebly of https://en.wikipedia.org/wiki/Phantasy_Star[Phantasy Star
+games] for http://segaretro.org/Sega_Mega_Drive[Mega Drive / Genesis].
 The project is very young at te moment. It may eventually cover more games.
 
 == Dependencies
 It should be pretty easy once you have all the dependencies installed and in your $PATH.
 
  * asl from http://john.ccac.rwth-aachen.de:8000/as/ - dev-lang/asl
-on Gentoo roslin (https://gitlab.com/roslin-uberlay/roslin) overlay
+on Gentoo https://gitlab.com/roslin-uberlay/roslin[roslin overlay]
  * gcc - for automatic compiling of p2bin
  * gawk >= 4.1.1 - for assembly code "live" patching 
  * Assembly sources of said games: https://github.com/lory90/ps2disasm[II] (currently tested),
