@@ -41,7 +41,8 @@ Those who use zsh things look more bright:
 This should work any any case, as zsh saves the file temporarily for your emulator.
 
 == Known limitations
- * For now Linux users will miss the `fixheader`,
+ * For now Linux users will miss the
+`https://raw.githubusercontent.com/sonicretro/s2disasm/ab771f939679b27398d3bd45c3c390508b0d0a33/build_source/fixheader.cpp[fixheader]`,
 Unless the executable is provided by `--fixheader` cli switch.
 Emulators shouldn't care about wrong header.
 But it's needed for creating _proper_ _binary_ patches.
