@@ -44,9 +44,9 @@ This should work any any case, as zsh saves the file temporarily for your emulat
  * For now Linux users will miss the `fixheader`.
 Emulators shouldn't care about that.
 But it's needed for creating proper _binary_ patches.
-It's being investigated how to implement that
+It's being investigated how to implement that.
  * Won't magically re-compress parts that need
-http://segaretro.org/Kosinski_compression[Kosinski compression]
+http://segaretro.org/Kosinski_compression[Kosinski compression].
 
 == Also...
  * This build script might work with some other disassemblies too.
