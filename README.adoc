@@ -11,7 +11,7 @@ https://github.com/Zuccace/mdps-asm-builder
 *Patches and issues should be targeted to the project above.*
 
 == Dependencies
-It should be pretty easy once you have all the dependencies installed and in your $PATH.
+It should be pretty easy once you have all the dependencies installed in your $PATH.
 
  * asl from http://john.ccac.rwth-aachen.de:8000/as/ - dev-lang/asl
 on Gentoo https://gitlab.com/roslin-uberlay/roslin[roslin overlay]
