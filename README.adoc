@@ -45,7 +45,6 @@ This should work any any case, as zsh saves the file temporarily for your emulat
 Unless the executable is provided by `--fixheader` cli switch.
 Emulators shouldn't care about wrong header.
 But it's needed for creating _proper_ _binary_ patches.
-It's being investigated how to implement that.
  * Won't magically re-compress parts that need
 http://segaretro.org/Kosinski_compression[Kosinski compression].
 It is totally unknwon at the moment if the feature will ever
