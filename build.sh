@@ -151,7 +151,7 @@ then
         else
             rm -r "$workdir"
             warn "Compiling p2bin failed."
-            test -e "$p2bin" && rm "$p2bin"
+            [ -e "$p2bin" ] && rm "$p2bin"
             errexit "Aborting..."
         fi
     fi
