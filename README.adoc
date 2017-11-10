@@ -1,8 +1,10 @@
 = Building Classic Phantasy Star Games on Linux
 
-This script makes it (super) easy to build the
+This script makes it (super?!?) easy to build the
 assebly of https://en.wikipedia.org/wiki/Phantasy_Star[Phantasy Star
 games] for http://segaretro.org/Sega_Mega_Drive[Mega Drive / Genesis].
+The script will be able to create binary diffs (patches) too in the _future_.
+So the goal is to be easy in terms of "run-one-command-and-be-done-with-it".
 The project is very young at the moment. It may eventually cover more games.
 
 The most recent (standalone) version can be found from

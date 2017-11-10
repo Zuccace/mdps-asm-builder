@@ -1,11 +1,10 @@
 #!/bin/sh
 
-version="0.0.3b"
+version="0.0.4b"
 
 this="${0##*/}"
 
 usage="USAGE: ${this} <assembly file> <output binary>
-       ${this} --stdout <assembly file>
        ${this} --help"
 
 help="$this for disassembled SEGA Mega Drive / Genesis Phantasy Star games.
@@ -33,9 +32,6 @@ Switches:
     Does not delete temporary files.
     --keep-temp
     (${this} still keeps temporary files in some cases where process has failed.)
-
-    Send the final binary to standard output rather than to a specified file.
-    --stdout
 "
 
 # Sets the name of the assembly log file if not set from the environment.
@@ -87,9 +83,6 @@ do
         ;;
         --keep-temp)
             keeptemp=1
-        ;;
-        --stdout)
-            stdout=1
         ;;
         --help)
             echo "${help}"
@@ -171,21 +164,19 @@ then
     errexit "Aborting..."
 fi
 
-# Rest of the code looks a bit dirty... TODO?
+# Create the final binary
+"$p2bin" "$temp_p" "$2" "$temp_h" > /dev/null && msg "Succesfully created '$2'." || errexit "p2bin failed to create the final binary."
 
-if ! [ "$stdout" ]
+# Choose if we want to fix the header.
+if [ "$fixheader" ] && [ ! "$nohfix" ]
 then
-    "$p2bin" "$temp_p" "$2" "$temp_h" > /dev/null && msg "Succesfully created '$2'." || errexit "p2bin failed to create the final binary."
-    if [ "$fixheader" ] && [ ! "$nohfix" ]
-    then
-        "$fixheader" "$2" && msg "Fixed the header of '$2'." || warn "Header fixing failed!"
-    else
-        msg "Binary header left unfixed."
-    fi
+    "$fixheader" "$2" && msg "Fixed the header of '$2'." || warn "Header fixing failed!"
 else
-    # A poor man's stdout method.
-    "$p2bin" "$temp_p" "${workdir}/out.bin" "$temp_h" > /dev/null && msg "Succesfully created '$2'." || errexit "p2bin failed to create the final binary."
-    cat "${workdir}/out.bin"
+     msg "Binary header left unfixed."
 fi
+
+# Create binary diff patches if we find more arguments from the command line
+# TODO :(
+#if [ "$3" ]
 
 test "$keeptemp" && msg "Temp files left into '${workdir}'" || rm -r "$workdir"
