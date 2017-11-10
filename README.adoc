@@ -3,7 +3,8 @@
 This script makes it (super?!?) easy to build the
 assebly of https://en.wikipedia.org/wiki/Phantasy_Star[Phantasy Star
 games] for http://segaretro.org/Sega_Mega_Drive[Mega Drive / Genesis].
-The script will be able to create binary diffs (patches) too in the _future_.
+The script is also able to create binary diffs (patches) too.
+http://www.daemonology.net/bsdiff/[BSDiff] and http://xdelta.org/[Xdelta] for example.
 So the goal is to be easy in terms of "run-one-command-and-be-done-with-it".
 The project is very young at the moment. It may eventually cover more games.
 
@@ -34,14 +35,6 @@ Or alternatively see the source. ;)
 You can place the script wherever you want.
 It should work from anywhere in the filesystem.
 
-If you run bash you can do some fancy tricks like:
-`your-emulator-of-choice <(./build.sh --stdout hacked.asm)`
-Also your emulator _needs_ to be able to read the ROM trough /dev/fd/*.
-
-Those who use zsh things look more bright:
-`your-emulator-of-choice =(./build.sh --stdout hacked.asm)`
-This should work any any case, as zsh saves the file temporarily for your emulator.
-
 == Known limitations
  * For now Linux users will miss the
 `https://raw.githubusercontent.com/sonicretro/s2disasm/ab771f939679b27398d3bd45c3c390508b0d0a33/build_source/fixheader.cpp[fixheader]`,
@@ -50,7 +43,7 @@ Emulators shouldn't care about wrong header.
 But it's needed for creating _proper_ _binary_ patches.
  * Won't magically re-compress parts that need
 http://segaretro.org/Kosinski_compression[Kosinski compression].
-It is totally unknwon at the moment if the feature will ever
+It is totally unknown at the moment if the feature will ever
 be implemented into this project.
 
 == Also...
@@ -60,4 +53,4 @@ Only Phantasy Star games are being tested.
 
 
 === TODO / Milestones
- * Add switches that enable creation of binary patches of the created ROM.
+ * ??? (Suggest more features by creating an issue)
