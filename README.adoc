@@ -40,7 +40,7 @@ It should work from anywhere in the filesystem.
 `https://raw.githubusercontent.com/sonicretro/s2disasm/ab771f939679b27398d3bd45c3c390508b0d0a33/build_source/fixheader.cpp[fixheader]`,
 Unless the executable is provided by `--fixheader` cli switch.
 Emulators shouldn't care about wrong header.
-But it's needed for creating _proper_ _binary_ patches.
+But it's needed for creating binaries that can run on actual hardware.
  * Won't magically re-compress parts that need
 http://segaretro.org/Kosinski_compression[Kosinski compression].
 It is totally unknown at the moment if the feature will ever
@@ -53,4 +53,5 @@ Only Phantasy Star games are being tested.
 
 
 === TODO / Milestones
- * ??? (Suggest more features by creating an issue)
+ * ??? (Suggest more features by https://github.com/Zuccace/mdps-asm-builder/issues/new[creating an issue]).
+ * Clean up the code and publish first release.
