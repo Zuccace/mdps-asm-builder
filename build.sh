@@ -88,14 +88,14 @@ build_bin() {
         "$p2bin" "$temp_p" "$temp_bin" "$temp_h" > /dev/null \
             && msg "Succesfully created the binary." \
             || errexit "p2bin failed to create the binary."
-       fix_bin_header "$temp_bin"
+        fix_bin_header "$temp_bin"
     else
         # We already have the binary. Return succesfully.
         return 0
     fi
 }
 
-# Be careful. fixbinheader is this function and fixheader is the binary.
+# Be careful. fix_bin_header is this function and fixheader is the binary.
 fix_bin_header() {
     # Choose if we want to fix the header.
     if [ "$fixheader" ] && [ ! "$nohfix" ]
@@ -260,6 +260,6 @@ do
 shift
 done
 
-[ "$out_bin" ] && mv "$temp_bin" "$out_bin" && msg "Binary created to '${out_bin}'."
+[ "$out_bin" ] && mv "$temp_bin" "$out_bin" && msg "Binary is located at '${out_bin}'."
 
 [ "$keeptemp" ] && msg "Temp files left into '${workdir}'" || rm -r "$workdir"
