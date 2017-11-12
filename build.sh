@@ -180,6 +180,8 @@ then
     errexit "No output file(s) specified."
 fi
 
+[ -e "$1" ] || errexit "No such file: $1"
+
 workdir="$(mktemp -td AS_tmp_XXXXXX)"
 
 # Set include dir to the directory where the assembly file is in.
