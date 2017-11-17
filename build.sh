@@ -149,6 +149,7 @@ do
         ;;
         --orig-bin)
             [ -e "$2" ] && orig_bin="$2" || errexit "No such file '${2}'."
+            shift
         ;;
         # Undocumented. Will use later.
         --no-header-fix)
