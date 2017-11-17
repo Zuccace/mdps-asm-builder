@@ -248,7 +248,7 @@ do
             create_bsdiff "$orig_bin" "$temp_bin" "$1"
         ;;
         xdelta)
-            create_xdelta "$orig_bin" "$temp_bin" "$1"
+            create_xdelta -f "$orig_bin" "$temp_bin" "$1"
         ;;
         bdiff)
             create_bdiff "$orig_bin" "$temp_bin" "$1"
