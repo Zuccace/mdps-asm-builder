@@ -117,7 +117,7 @@ create_bsdiff() {
 
 # Xdelta is one of the most common binary diff programs.
 create_xdelta() {
-    check_dep "${xdelta:="xdelta3"}" die && "$xdelta" -e -S djw -9 -s "$1" "$2" "$3"  || warn "Xdelta failed."
+    check_dep "${xdelta:="xdelta3"}" die && "$xdelta" -f -e -S djw -9 -s "$1" "$2" "$3"  || warn "Xdelta failed."
     msg "Xdelta created to '$3'..."
 }
 
@@ -248,7 +248,7 @@ do
             create_bsdiff "$orig_bin" "$temp_bin" "$1"
         ;;
         xdelta)
-            create_xdelta -f "$orig_bin" "$temp_bin" "$1"
+            create_xdelta "$orig_bin" "$temp_bin" "$1"
         ;;
         bdiff)
             create_bdiff "$orig_bin" "$temp_bin" "$1"
