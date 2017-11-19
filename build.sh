@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="0.1"
+version="0.1.1"
 
 this="${0##*/}"
 
@@ -278,27 +278,29 @@ shift
 # Now we have only the output files left on the command line.
 # Let's roll!
 
+# Create sums:
+msg "Checksums for the binary: "
+for hash in md5 sha{1,244,256,384,512}
+do
+    if check_dep "${hash}sum"
+    then
+        msg "${hash} - $("${hash}sum" -b "$temp_bin" | cut -f 1 -d ' ' | tee "${workdir}/${hash}")"
+    fi
+done
+
 while [ "$1" ]
 do
-
     ext="${1##*.}" # Filename extension
-
     # At least busybox ash doesn't support <<< redirection. That's why the echo.
     case "$(echo "$ext" | tr '[:upper:]' '[:lower:]')" in # lovercase
         bin)
             out_bin="$1"
         ;;
-        bsdiff)
-            create_bsdiff "$orig_bin" "$temp_bin" "$1"
+        bsdiff|xdelta|bdiff|ips)
+            "create_${ext}" "$orig_bin" "$temp_bin" "$1"
         ;;
-        xdelta)
-            create_xdelta "$orig_bin" "$temp_bin" "$1"
-        ;;
-        bdiff)
-            create_bdiff "$orig_bin" "$temp_bin" "$1"
-        ;;
-        ips)
-            create_ips "$orig_bin" "$temp_bin" "$1"
+        md5|sha1|sha244|sha256|sha384|sha512)
+            mv "${workdir}/${ext}" "$1" && msg "${ext} checksum created to '$1'..." || warn "${ext} failed. Maybe you're missing ${ext} command line utility?"
         ;;
         *)
             warn "File type on '${ext}' is unknown. Skipping..."
