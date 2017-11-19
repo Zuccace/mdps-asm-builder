@@ -151,6 +151,8 @@ create_ips() {
         else
             python3 "$ips_py" create "$1" "$2" "$3" &&  msg "ips created to '$3'..." || warn "ips failed"
         fi
+    else
+        warn "python3 missing. Skipping ips patch creation."
     fi
 }
 
