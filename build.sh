@@ -104,7 +104,7 @@ build_bin() {
     then
         "$p2bin" "$temp_p" "$temp_bin" "$temp_h" > /dev/null \
             && msg "Succesfully created the binary." \
-            || errexit "p2bin failed to create the binary."
+            || errexit "p2bin failed to create the binary. Temporary files left into '${workdir}'"
         fix_bin_header "$temp_bin"
     else
         # We already have the binary. Return succesfully.
@@ -243,14 +243,17 @@ temp_bin="${workdir}/out.bin"
 : ${orig_bin:="${1%.*}original.bin"}
 
 # Copy files to our temporary directory.
+# Should just straight redirect (g)awk output there... TODO
 cp "$1" "$workdir"
 
-asmfile="${workdir}/${1##*/}"
+baseasm="${1##*/}"
+base="${baseasm%.*}"
+asmfile="${workdir}/${baseasm}"
 
 # Patch and compile the assembly.
 path_patch "$asmfile" && msg "Path patch applied..." || errexit "Patching failed. '$tempdir' -directory is left undeleted."
 "${asl:="asl"}" -xx -c -A -l -shareout "$temp_h" -o "$temp_p" "$asmfile" > "$temp_log" 2>&1 \
-    && msg Source compiled... \
+    && msg "Source compiled..." \
     || errexit "Source compiling failed. Temporary files are left intact inside '${workdir}' -directory."
 
 # Find source and compile the p2bin program if needed.
@@ -300,7 +303,13 @@ do
             "create_${ext}" "$orig_bin" "$temp_bin" "$1"
         ;;
         md5|sha1|sha244|sha256|sha384|sha512)
-            mv "${workdir}/${ext}" "$1" && msg "${ext} checksum created to '$1'..." || warn "${ext} failed. Maybe you're missing ${ext} command line utility?"
+            if [ -f "${workdir}/${ext}" ]
+            then
+                echo "$(cat "${workdir}/${ext}") *${base}.bin" > "$1"
+                msg "${ext} checksum created to '$1'..."
+            else
+                warn "${ext} failed. Maybe you're missing ${ext} command line utility?" 
+            fi
         ;;
         *)
             warn "File type on '${ext}' is unknown. Skipping..."
