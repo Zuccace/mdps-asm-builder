@@ -74,12 +74,13 @@ check_dep() {
 
 ask_install() {
     bn="${1##*/}"
-    msg "Didn't found '${bn}'.\nProceed with downloading ${bn} from https://github.com/fbeaudet/ips.py and installing into '${includedir}'? [Y/n]"
+    msg "Didn't found '${bn}'.\nProceed with downloading ${bn} and installing it into '${includedir}'? [Y/n]"
     read answer && case "$answer" in
         [Yy]|[Yy][Ee][Ss])
             wget -O "${includedir}/${bn}" "$2" || { warn "Downloading of "$bn" failed."; return 1; }
         ;;
         [Nn][Oo]?)
+            msg "Skipped ips patch creation by user request."
             return 1
         ;;
         *)
