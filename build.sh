@@ -78,8 +78,9 @@ check_dep() {
 
 find_one() {
     one="$(find "${includedir}" -type f -iname "$1")"
-    if  [ "$(echo -n "$one" | wc -l)" -gt 1 ]
+    if  [ "$(echo "$one" | wc -l)" -gt 1 ]
     then
+        echo -n "$one"
         return 1
     elif [ "$one" ]
     then
@@ -148,7 +149,8 @@ setup_helper() {
             fi
         elif [ "$status" -eq 1 ]
         then # Multiple choices!
-            warn "Multiple sources for ${1} found:\n${helper_sources}"
+            warn "Multiple sources for ${1} found:\n${helper_source}"
+            return 1
         elif [ "$3" ]
         then                                                      # Recursion!
             ask_download "${helperdir}/${2}" "$3" && setup_helper "$1" "$2" || return 1
