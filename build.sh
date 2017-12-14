@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="0.2.0b"
+version="0.2.1b"
 
 this="${0##*/}"
 
@@ -27,6 +27,10 @@ $usage
 Where output may be *.bin *.bsdiff *.xdelta *.bdiff *.md5 *.sha1 *.sha244 *.sha256 *.sha384 *.sha512 ...
 
 Switches:
+
+    Location of the Macro assembler AS.
+    --asl <asl executable>
+
     Location of p2bin.
     --p2bin <p2bin executable>
 
@@ -111,11 +115,15 @@ ask_download() {
 
 # Path patching using awk.
 # While we're at it replace paths with absolute ones.
-# Why? I didn't find any way to tell asl
-# from which diretory to search for includes.
+# Why? I didn't find any simmple way to tell asl
+# from which diretory to search for includes,
+# because there are many of them at leas in case of PSII
+# and I just cannot give a root directory where all
+# the directories reside where the includes are.
 path_patch() {
     # We are using gawk. Would maybe be better to use POSIX awk instead...
-    gawk -i inplace -v "includedir=${includedir}" '{if (/b?include\s+"/) { sub("\"","\"" includedir "/"); gsub("\\\\","/") } print }' "$@"
+    # Although gsub is gawk extension. :(
+    gawk -v "includedir=${includedir}" '{if (/b?include\s+"/) { sub("\"","\"" includedir "/"); gsub("\\\\","/") } print }' "$@"
 }
 
 # Creates the final binary into the temp directory
@@ -228,6 +236,11 @@ create_ips() {
 while [ "${1:0:1}" = "-" ]
 do
     case "$1" in
+        --asl)
+            [ "$2" ] && check_dep "$2" die
+            asl="$2"
+            shift
+        ;;
         --p2bin)
             [ "$2" ] && check_dep "$2" die
             p2bin="$2"
@@ -307,22 +320,21 @@ temp_bin="${workdir}/out.bin"
 # So by default it's the same as the main assembly file with extension changed to 'bin'.
 : ${orig_bin:="${1%.*}original.bin"}
 
-# Copy files to our temporary directory.
-# Should just straight redirect (g)awk output there... TODO
-cp "$1" "$workdir"
-
 baseasm="${1##*/}"
 base="${baseasm%.*}"
 asmfile="${workdir}/${baseasm}"
 
 setup_p2bin
 
-# Patch and compile the assembly. TODO: This needs cleaning.
-path_patch "$asmfile" && msg "Path patch applied..." || errexit "Patching failed. '$tempdir' -directory is left undeleted."
-"${asl:="asl"}" -xx -c -A -l -shareout "$temp_h" -o "$temp_p" "$asmfile" > "$temp_log" 2>&1 \
-    && msg "Source compiled..." \
-    || errexit "Source compiling failed. Temporary files are left intact inside '${workdir}' -directory."
-
+# Patch and compile the assembly.
+path_patch "$1" > "$asmfile" && msg "Path patch applied..." || errexit "Patching failed. '$tempdir' -directory is left undeleted."
+check_dep "${asl:="asl"}" die
+if "${asl}" -xx -c -A -l -shareout "$temp_h" -o "$temp_p" "$asmfile" > "$temp_log" 2>&1
+then
+    msg "Source compiled..."
+else
+    errexit "Source compiling failed. Temporary files are left intact inside '${workdir}' -directory."
+fi
 
 # Combine all the files to form the binary
 build_bin
@@ -333,7 +345,7 @@ shift
 
 # Create sums:
 msg "Checksums for the binary: "
-for hash in md5 sha{1,244,256,384,512}
+for hash in md5 sha{1,224,256,384,512}
 do
     if check_dep "${hash}sum"
     then
@@ -357,7 +369,7 @@ do
                 warn "Can't create $ext patch without a binary to compare to. Maybe use '--orig-bin'?"
             fi
         ;;
-        md5|sha1|sha244|sha256|sha384|sha512)
+        md5|sha1|sha224|sha256|sha384|sha512)
             if [ -f "${workdir}/${ext}" ]
             then
                 echo "$(cat "${workdir}/${ext}") *${base}.bin" > "$1"
