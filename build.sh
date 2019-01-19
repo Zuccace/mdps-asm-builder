@@ -117,7 +117,7 @@ ask_download() {
 # While we're at it replace paths with absolute ones.
 # Why? I didn't find any simmple way to tell asl
 # from which diretory to search for includes,
-# because there are many of them at leas in case of PSII
+# because there are many of them at least in case of PSII
 # and I just cannot give a root directory where all
 # the directories reside where the includes are.
 path_patch() {
