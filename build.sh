@@ -16,7 +16,7 @@ Major dependencies are
     - asl, the macro assembler
     - gawk 4.1.1 or newer for inline patching
     - gcc only for compiling the p2bin
-    - BSDiff, Xdelta, bdiff, ips.py for support of patch file creation
+    - BSDiff, Xdelta, bdelta, ips.py for support of patch file creation
     - md5sum, sha1sum, sha244sum, sha256sum, sha384sum and sha512sum to be able to create checksums of the compiled binary 
 
 Note that this script may reside anywhere in the filesystem.
@@ -24,7 +24,7 @@ Also running this script outside of the directory where the assembly is allowed.
 
 $usage
 
-Where output may be *.bin *.bsdiff *.xdelta *.bdiff *.md5 *.sha1 *.sha244 *.sha256 *.sha384 *.sha512 ...
+Where output may be *.bin *.bsdiff *.xdelta *.bdelta *.md5 *.sha1 *.sha244 *.sha256 *.sha384 *.sha512 ...
 
 Switches:
 
@@ -38,7 +38,7 @@ Switches:
     --fixheader <fixheader executable>
 
     Specify locations of helper programs
-    --bsdiff --xdelta --bdiff --ips-py
+    --bsdiff --xdelta --bdelta --ips-py
 
     Does not delete temporary files.
     --keep-temp
@@ -208,7 +208,7 @@ create_xdelta() {
 
 # BDelta. https://github.com/jjwhitney/BDelta
 create_bdelta() {
-    check_dep "${bdelta:="bdelta"}" die && "$bdelta" "$1" "$2" "$3" && msg "bdiff created to '$3'..." || warn "bdelta failed."
+    check_dep "${bdelta:="bdelta"}" die && "$bdelta" "$1" "$2" "$3" && msg "bdelta created to '$3'..." || warn "bdelta failed."
 }
 
 # IPS is a common format too. romhacking.net users might want to use this.
@@ -261,9 +261,9 @@ do
             xdelta="$2"
             shift
         ;;
-        --bdiff)
+        --bdelta)
             [ "$2" ] && check_dep "$2" die
-            bdiff="$2"
+            bdelta="$2"
             shift
         ;;
         --ips-py|--ipspy)
@@ -361,7 +361,7 @@ do
         bin)
             out_bin="$1"
         ;;
-        bsdiff|xdelta|bdiff|ips)
+        bsdiff|xdelta|bdelta|ips)
             if [ -e "$orig_bin" ]
             then
                 "create_${ext}" "$orig_bin" "$temp_bin" "$1"
