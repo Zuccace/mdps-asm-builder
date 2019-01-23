@@ -108,7 +108,7 @@ ask_download() {
             return 1
         ;;
         *)
-            [ "$answer" == "" ] && wget -O "$1" "$2" || { warn "Downloading of "$bn" failed."; return 1; }
+            [ -z "$answer" ] && wget -O "$1" "$2" || { warn "Downloading of "$bn" failed."; return 1; }
         ;;
     esac || return 1
 }
