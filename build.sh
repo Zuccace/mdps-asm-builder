@@ -434,7 +434,7 @@ done
 # We're careful here...
 unset ext
 
-set_array "$hasharray"
+set_arr "$hasharray"
 # We have now a new $@ which contains sum/hash files to be generated.
 
 while [ "$1" ]
