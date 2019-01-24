@@ -438,8 +438,9 @@ set_array "$hasharray"
 while [ "$1" ]
 do
     ext="${1##*.}" # Hash file extension.
-    subext="${1%.*}"
-    subext="${subext##*.}" # Sub extension
+    ref_file="${1%.*}"
+    ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
+    subext="${ref_file##*.}" # Sub extension.
     temp_patch="${workdir}/${subext}"
     temp_hash="${temp_patch}.${ext}"
     temp_rhash="${workdir}/${subext}.rhash"
@@ -455,7 +456,7 @@ do
             tohash="$temp_bin"
         elif [ ! -f "$temp_patch" ]
         then
-            # We don't have a file from where to calculate the hash
+            # We don't have a file from where to calculate the hash.
             if [ -e "$orig_bin" ]
             then
                 "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
@@ -470,9 +471,9 @@ do
 
         if check_dep "${rhash:="rhash"}"
         then
-            "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "ext=${subext}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " ext}' | while read hash_line
+            "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
             do
-                echo "$(echo "$line" | cut -d ' ' -f 2)" > "${workdir}/${subext}.$(echo "$line" | cut -d ' ' -f 1)"
+                echo "$(echo "$line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$line" | cut -d ' ' -f 1)"
             done
         else # Fallback to sha/md utils.
             case "$ext" in
