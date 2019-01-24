@@ -71,6 +71,19 @@ errexit() {
     exit "${ec:=1}"
 }
 
+push_arr() {
+    for i in "$@"
+    do
+        printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/"
+    done
+}
+
+# Turns specially formatted variable into
+# an array that's accessible via "$@".
+set_arr() {
+    eval "set -- $1 $(echo " ")"
+}
+
 check_dep() {
     if [ -x "$(which "$1" 2> /dev/null)" ]
     then
@@ -198,26 +211,57 @@ setup_p2bin() {
 
 ### Patch creation functions
 # Every function takes <oldfile> <newfile> <patchfile>
+# TODO: Looking a way to simplify this... Too much repeated commands.
+# Also check_deps should only be run if the patch file does not exist.
 
 # Perhaps the most efficient binary diff algo there is.
 create_bsdiff() {
-    check_dep "${bsdiff:="bsdiff"}" die && "$bsdiff" "$1" "$2" "$3" && msg "BSDiff created to '$3'..." || warn "BSDiff failed."
+    if check_dep "${bsdiff:="bsdiff"}" die
+    then
+        if [ -f "${workdir}/bsdiff" ] || "$bsdiff" "$1" "$2" "${workdir}/bsdiff"
+        then
+            cp "${workdir}/bsdiff" "$3"
+            msg "BSDiff created to '$3'..."
+        else
+            warn "BSDiff failed. '$3' not created."
+        fi
+    fi
     }
 
 # Xdelta is one of the most common binary diff programs.
 create_xdelta() {
-    check_dep "${xdelta:="xdelta3"}" die && "$xdelta" -f -e -S djw -9 -s "$1" "$2" "$3"  && msg "Xdelta created to '$3'..." || warn "Xdelta failed."
+    if check_dep "${xdelta:="xdelta3"}" die
+    then
+        if [ -f "${workdir}/xdelta" ] || "$xdelta" -f -e -S djw -9 -s "$1" "$2" "${workdir}/xdelta"
+        then
+            cp "${workdir}/xdelta" "$3"
+            msg "Xdelta created to '$3'..."
+        else
+            warn "Xdelta failed. '$3' not created."
+        fi
+    fi
 }
 
 # BDelta. https://github.com/jjwhitney/BDelta
 create_bdelta() {
-    check_dep "${bdelta:="bdelta"}" die && "$bdelta" "$1" "$2" "$3" && msg "bdelta created to '$3'..." || warn "bdelta failed."
+    if check_dep "${bdelta:="bdelta"}" die
+    then
+        if [ -f "${workdir}/bdelta" ] || "$bdelta" "$1" "$2" "${workdir}/bdelta"
+        then
+            cp "${workdir}/bdelta" "$3"
+            msg "bdelta created to '$3'..."
+        else
+            warn "bdelta failed. '$3' not created."
+        fi
+    fi
 }
 
 # IPS is a common format too. romhacking.net users might want to use this.
 create_ips() {
+    # TODO: This function needs an overhaul.
     if check_dep python3
     then
+        check_dep "ips-tool" die && ips_py="$(which ips-tool)"
         [ "$ips_py" ] || ips_py="$(find_one 'ips.py')"
         status="$?"
         if [ "$status" -eq 0 ]
@@ -273,6 +317,10 @@ do
             [ "$2" ] && check_dep "$2" die
             ips_py="$2"
             shift
+        --rhash)
+            [ "$2" ] && check_dep "$2" die
+            rhash="$2"
+            shift
         ;;
         --orig-bin|--original)
             [ -e "$2" ] && orig_bin="$2" || errexit "No such file '${2}'."
@@ -326,8 +374,11 @@ temp_bin="${workdir}/out.bin"
 # So by default it's the same as the main assembly file with extension changed to 'bin'.
 : ${orig_bin:="${1%.*}original.bin"}
 
+# Basename of the main assembly file.
 baseasm="${1##*/}"
+# Same but extension removed. 
 base="${baseasm%.*}"
+# Temporary main assembly file, which will have patch_patch() applied into.
 asmfile="${workdir}/${baseasm}"
 
 setup_p2bin
@@ -349,25 +400,7 @@ shift
 # Now we have only the output files left on the command line.
 # Let's roll!
 
-# This block needs to go. It just complicates things.
-if [ "$sums" ]
-then
-    msg "Checksums for the binary:"
-    if false
-    then
-        # We have rhash. This is going to be _so_ much easier! <3
-        # Oops we don't!
-    else
-        for hash in md5 sha1 sha224 sha256 sha384 sha512
-        do
-            if check_dep "${hash}sum"
-            then
-                msg "${hash} - $("${hash}sum" -b "$temp_bin" | cut -f 1 -d ' ' | tee "${workdir}/${hash}")"
-            fi
-        done
-        unset hash
-    fi
-fi
+hasharray=""
 
 while [ "$1" ]
 do
@@ -386,20 +419,78 @@ do
             fi
         ;;
         md5|sha1|sha224|sha256|sha384|sha512|rhash)
-            if [ -f "${workdir}/${ext}" ]
-            then
-                echo "$(cat "${workdir}/${ext}") *${base}.bin" > "$1"
-                msg "${ext} checksum of the binary created to '$1'..."
-            else
-                warn "${ext} failed. Maybe you're missing ${ext} command line utility?" 
-            fi
+            # Will process sums later using some magic.
+            hasharray="$hasharray $(push_arr "$1")"
         ;;
         *)
             warn "File type on '${ext}' is unknown. Skipping..."
         ;;
     esac
-shift
+    shift
 done
+
+# We're careful here...
+unset ext
+
+set_array "$hasharray"
+# We have now a new $@ which contains sum/hash files to be generated.
+
+while [ "$1" ]
+do
+    ext="${1##*.}" # Hash file extension.
+    subext="${1%.*}"
+    subext="${subext##*.}" # Sub extension
+    temp_patch="${workdir}/${subext}"
+    temp_hash="${temp_patch}.${ext}"
+    temp_rhash="${workdir}/${subext}.rhash"
+
+    if [ -f "$temp_hash" ]
+    then
+        # We already have calculated hash value. Just copy it to the right place.
+        cp "$temp_hash" "$1"
+    else
+
+        if [ "$subext" = "bin" ]
+        then
+            tohash="$temp_bin"
+        elif [ ! -f "$temp_patch" ]
+        then
+            # We don't have a file from where to calculate the hash
+            if [ -e "$orig_bin" ]
+            then
+                "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
+            else
+                warn "Need an original binary (--orig-bin), because a temporary patch is needed to be able to create hash sum out of it."
+                warn "Skipping creation of '$1'"
+                shift
+                continue
+            fi
+            tohash="$temp_patch"
+        fi
+
+        if check_dep "${rhash:="rhash"}"
+        then
+            "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "ext=${subext}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " ext}' | while read hash_line
+            do
+                echo "$(echo "$line" | cut -d ' ' -f 2)" > "${workdir}/${subext}.$(echo "$line" | cut -d ' ' -f 1)"
+            done
+        else # Fallback to sha/md utils.
+            case "$ext" in
+                sha*)
+                    if check_dep "${ext}sum"
+                    then
+                        true
+                        # TODO: Generate sum with *sum tool.
+                    else
+                        warn "No tool to generate ${ext}sum. To support all hash functions intall rhash or make sure it's in your PATH."
+                    fi
+                ;;
+            esac
+        fi
+    fi
+    shift
+done
+
 
 [ "$out_bin" ] && mv "$temp_bin" "$out_bin" && msg "Binary is located at '${out_bin}'."
 
