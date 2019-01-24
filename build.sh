@@ -259,6 +259,7 @@ create_bdelta() {
 # IPS is a common format too. romhacking.net users might want to use this.
 create_ips() {
     # TODO: This function needs an overhaul.
+    errexit "iPS patches are unsupported at the moment."
     if check_dep python3
     then
         check_dep "ips-tool" die && ips_py="$(which ips-tool)"
