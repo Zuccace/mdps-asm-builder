@@ -71,6 +71,9 @@ errexit() {
     exit "${ec:=1}"
 }
 
+# TODO: this function sets quotes in wrong way.
+# This essentially results in no hash sums created.
+# FIX ASAP. More info from: https://unix.stackexchange.com/questions/421158/how-to-use-pseudo-arrays-in-posix-shell-script
 push_arr() {
     for i in "$@"
     do
