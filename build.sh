@@ -17,7 +17,7 @@ Major dependencies are
     - gawk 4.1.1 or newer for inline patching
     - gcc only for compiling the p2bin
     - BSDiff, Xdelta, bdelta, ips.py for support of patch file creation
-    - md5sum, sha1sum, sha244sum, sha256sum, sha384sum and sha512sum to be able to create checksums of the compiled binary 
+    - md5sum, sha1sum, sha244sum, sha256sum, sha384sum and sha512sum OR rhash to be able to create checksums of the compiled binary 
 
 Note that this script may reside anywhere in the filesystem.
 Also running this script outside of the directory where the assembly is allowed.
@@ -39,6 +39,9 @@ Switches:
 
     Specify locations of helper programs
     --bsdiff --xdelta --bdelta --ips-py
+
+    Print checksums (may be quite noicy)
+    --sums
 
     Does not delete temporary files.
     --keep-temp
@@ -275,6 +278,9 @@ do
             [ -e "$2" ] && orig_bin="$2" || errexit "No such file '${2}'."
             shift
         ;;
+        ---show-sums)
+            sums=true
+        ;;
         --keep-temp)
             keeptemp=1
         ;;
@@ -343,20 +349,30 @@ shift
 # Now we have only the output files left on the command line.
 # Let's roll!
 
-# Create sums:
-msg "Checksums for the binary: "
-for hash in md5 sha{1,224,256,384,512}
-do
-    if check_dep "${hash}sum"
+# This block needs to go. It just complicates things.
+if [ "$sums" ]
+then
+    msg "Checksums for the binary:"
+    if false
     then
-        msg "${hash} - $("${hash}sum" -b "$temp_bin" | cut -f 1 -d ' ' | tee "${workdir}/${hash}")"
+        # We have rhash. This is going to be _so_ much easier! <3
+        # Oops we don't!
+    else
+        for hash in md5 sha1 sha224 sha256 sha384 sha512
+        do
+            if check_dep "${hash}sum"
+            then
+                msg "${hash} - $("${hash}sum" -b "$temp_bin" | cut -f 1 -d ' ' | tee "${workdir}/${hash}")"
+            fi
+        done
+        unset hash
     fi
-done
+fi
 
 while [ "$1" ]
 do
     ext="${1##*.}" # Filename extension
-    # At least busybox ash doesn't support <<< redirection. That's why the echo.
+    # At least busybox sh doesn't support <<< redirection. That's why the echo.
     case "$(echo "$ext" | tr '[:upper:]' '[:lower:]')" in # lovercase
         bin)
             out_bin="$1"
@@ -369,7 +385,7 @@ do
                 warn "Can't create $ext patch without a binary to compare to. Maybe use '--orig-bin'?"
             fi
         ;;
-        md5|sha1|sha224|sha256|sha384|sha512)
+        md5|sha1|sha224|sha256|sha384|sha512|rhash)
             if [ -f "${workdir}/${ext}" ]
             then
                 echo "$(cat "${workdir}/${ext}") *${base}.bin" > "$1"
