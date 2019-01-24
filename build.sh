@@ -318,6 +318,7 @@ do
             [ "$2" ] && check_dep "$2" die
             ips_py="$2"
             shift
+        ;;
         --rhash)
             [ "$2" ] && check_dep "$2" die
             rhash="$2"
