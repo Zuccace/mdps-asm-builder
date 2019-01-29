@@ -435,12 +435,10 @@ done
 unset ext
 
 eval "set -- $hasharray ''"
-set | grep hasharray
 # We have now a new $@ which contains sum/hash files to be generated.
 
 while [ "$1" ]
 do
-    echo "sumloop with $1"
     ext="${1##*.}" # Hash file extension.
     ref_file="${1%.*}"
     ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
