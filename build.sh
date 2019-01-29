@@ -223,8 +223,7 @@ create_bsdiff() {
     then
         if [ -f "${workdir}/bsdiff" ] || "$bsdiff" "$1" "$2" "${workdir}/bsdiff"
         then
-            cp "${workdir}/bsdiff" "$3"
-            msg "BSDiff created to '$3'..."
+            [ "${workdir}/bsdiff" != "$3" ] && cp "${workdir}/bsdiff" "$3" && msg "BSDiff created to '$3'..."
         else
             warn "BSDiff failed. '$3' not created."
         fi
@@ -237,8 +236,7 @@ create_xdelta() {
     then
         if [ -f "${workdir}/xdelta" ] || "$xdelta" -f -e -S djw -9 -s "$1" "$2" "${workdir}/xdelta"
         then
-            cp "${workdir}/xdelta" "$3"
-            msg "Xdelta created to '$3'..."
+            [ "${workdir}/xdelta" != "$3" ] && cp "${workdir}/xdelta" "$3" && msg "Xdelta created to '$3'..."
         else
             warn "Xdelta failed. '$3' not created."
         fi
@@ -251,8 +249,7 @@ create_bdelta() {
     then
         if [ -f "${workdir}/bdelta" ] || "$bdelta" "$1" "$2" "${workdir}/bdelta"
         then
-            cp "${workdir}/bdelta" "$3"
-            msg "bdelta created to '$3'..."
+            [ "${workdir}/bdelta" != "$3" ] && cp "${workdir}/bdelta" "$3" && msg "bdelta created to '$3'..."
         else
             warn "bdelta failed. '$3' not created."
         fi
