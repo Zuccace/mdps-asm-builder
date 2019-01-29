@@ -406,9 +406,8 @@ hasharray=""
 
 while [ "$1" ]
 do
-    ext="${1##*.}" # Filename extension
-    # At least busybox sh doesn't support <<< redirection. That's why the echo.
-    case "$(echo "$ext" | tr '[:upper:]' '[:lower:]')" in # lovercase
+    ext="$(echo "${1##*.}" | tr '[:upper:]' '[:lower:]')" # Filename extension
+    case "$ext" in # lovercase
         bin)
             out_bin="$1"
         ;;
