@@ -420,12 +420,9 @@ do
                 warn "Can't create $ext patch without a binary to compare to. Maybe use '--orig-bin'?"
             fi
         ;;
-        md5|sha1|sha224|sha256|sha384|sha512|rhash)
+        *)
             # Will process sums later using some magic.
             hasharray="$hasharray $(push_arr "$1")"
-        ;;
-        *)
-            warn "File type on '${ext}' is unknown. Skipping..."
         ;;
     esac
     shift
@@ -437,61 +434,71 @@ unset ext
 eval "set -- $hasharray ''"
 # We have now a new $@ which contains sum/hash files to be generated.
 
+supported_hashes="$(rhash --list-hashes | awk '{$1 = tolower($1); gsub(/[^a-z0-9]/,"",$1); print $1}' | paste -sd '|')"
+
 while [ "$1" ]
 do
-    ext="${1##*.}" # Hash file extension.
-    ref_file="${1%.*}"
-    ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
-    subext="${ref_file##*.}" # Sub extension.
-    temp_patch="${workdir}/${subext}"
-    temp_hash="${temp_patch}.${ext}"
-    temp_rhash="${workdir}/${subext}.rhash"
+    ext="$(echo "${1##*.}" | tr '[:upper:]' '[:lower:]')" # Hash(?) file extension
 
-    if [ -f "$temp_hash" ]
+    # Kinda dirty...
+    if echo "$ext" | egrep -q "^(${supported_hashes})\$"
     then
-        # We already have calculated hash value. Just copy it to the right place.
+        ref_file="${1%.*}"
+        ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
+        subext="${ref_file##*.}" # Sub extension.
+        # TODO: Check current directory if a patch exists. If not then use value below.
+        temp_patch="${workdir}/${subext}"
+        temp_hash="${temp_patch}.${ext}"
+        temp_rhash="${workdir}/${subext}.rhash"
+
+        if [ -f "$temp_hash" ]
+        then
+            # We already have calculated hash value. Just copy it to the right place.
+            cp "$temp_hash" "$1"
+        else
+
+            if [ "$subext" = "bin" ]
+            then
+                tohash="$temp_bin"
+            elif [ ! -f "$temp_patch" ]
+            then
+                # We don't have a file from where to calculate the hash.
+                if [ -e "$orig_bin" ]
+                then
+                    "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
+                else
+                    warn "Need an original binary (--orig-bin), because a temporary patch is needed to be able to create hash sum out of it."
+                    warn "Skipping creation of '$1'"
+                    shift
+                    continue
+                fi
+                tohash="$temp_patch"
+            fi
+
+            if check_dep "${rhash:="rhash"}"
+            then
+                "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
+                do
+                    echo "$(echo "$hash_line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$hash_line" | cut -d ' ' -f 1)"
+                done
+            else # Fallback to sha/md utils.
+                case "$ext" in
+                    sha*)
+                        if check_dep "${ext}sum"
+                        then
+                            true
+                            # TODO: Generate sum with *sum tool.
+                        else
+                            warn "No tool to generate ${ext}sum. To support all hash functions intall rhash or make sure it's in your PATH."
+                        fi
+                    ;;
+                esac
+            fi
+        fi
         cp "$temp_hash" "$1"
     else
-
-        if [ "$subext" = "bin" ]
-        then
-            tohash="$temp_bin"
-        elif [ ! -f "$temp_patch" ]
-        then
-            # We don't have a file from where to calculate the hash.
-            if [ -e "$orig_bin" ]
-            then
-                "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
-            else
-                warn "Need an original binary (--orig-bin), because a temporary patch is needed to be able to create hash sum out of it."
-                warn "Skipping creation of '$1'"
-                shift
-                continue
-            fi
-            tohash="$temp_patch"
-        fi
-
-        if check_dep "${rhash:="rhash"}"
-        then
-            "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
-            do
-                echo "$(echo "$hash_line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$hash_line" | cut -d ' ' -f 1)"
-            done
-        else # Fallback to sha/md utils.
-            case "$ext" in
-                sha*)
-                    if check_dep "${ext}sum"
-                    then
-                        true
-                        # TODO: Generate sum with *sum tool.
-                    else
-                        warn "No tool to generate ${ext}sum. To support all hash functions intall rhash or make sure it's in your PATH."
-                    fi
-                ;;
-            esac
-        fi
+        warn "File type on '${ext}' is unknown. Skipping..."
     fi
-    cp "$temp_hash" "$1"
     shift
 done
 
