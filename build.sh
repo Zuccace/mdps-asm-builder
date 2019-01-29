@@ -77,15 +77,15 @@ errexit() {
 push_arr() {
     for i in "$@"
     do
-        printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/"
+        printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' /"
     done
 }
 
 # Turns specially formatted variable into
 # an array that's accessible via "$@".
-set_arr() {
-    eval "set -- $1 $(echo " ")"
-}
+#set_arr() {
+#    eval "set -- $* $(echo " ")"
+#}
 
 check_dep() {
     if [ -x "$(which "$1" 2> /dev/null)" ]
@@ -437,11 +437,13 @@ done
 # We're careful here...
 unset ext
 
-set_arr "$hasharray"
+eval "set -- $hasharray ''"
+set | grep hasharray
 # We have now a new $@ which contains sum/hash files to be generated.
 
 while [ "$1" ]
 do
+    echo "sumloop with $1"
     ext="${1##*.}" # Hash file extension.
     ref_file="${1%.*}"
     ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
@@ -478,7 +480,7 @@ do
         then
             "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
             do
-                echo "$(echo "$line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$line" | cut -d ' ' -f 1)"
+                echo "$(echo "$hash_line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$hash_line" | cut -d ' ' -f 1)"
             done
         else # Fallback to sha/md utils.
             case "$ext" in
@@ -494,6 +496,7 @@ do
             esac
         fi
     fi
+    cp "$temp_hash" "$1"
     shift
 done
 
