@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="0.2.1b"
+version="0.2.2b"
 
 this="${0##*/}"
 
@@ -140,9 +140,7 @@ ask_download() {
 # and I just cannot give a root directory where all
 # the directories reside where the includes are.
 path_patch() {
-    # We are using gawk. Would maybe be better to use POSIX awk instead...
-    # Although gsub is gawk extension. :(
-    gawk -v "includedir=${includedir}" '{if (/b?include\s+"/) { sub("\"","\"" includedir "/"); gsub("\\\\","/") } print }' "$@"
+    awk -v "includedir=${includedir}" '{if (/b?include\s+"/) { sub("\"","\"" includedir "/"); gsub("\\\\","/") } print }' "$@"
 }
 
 # Creates the final binary into the temp directory
@@ -452,7 +450,7 @@ do
 
         if [ -f "$temp_hash" ]
         then
-            # We already have calculated hash value. Just copy it to the right place.
+            # We already have calculated the hash value. Just copy it to the right place.
             cp "$temp_hash" "$1"
         else
 
