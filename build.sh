@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="0.2.2b"
+version="1.0.0_alpha_rc1"
 
 this="${0##*/}"
 
@@ -38,7 +38,7 @@ Switches:
     --fixheader <fixheader executable>
 
     Specify locations of helper programs
-    --bsdiff --xdelta --bdelta --ips-py
+    --bsdiff --xdelta --bdelta
 
     Print checksums (may be quite noicy)
     --sums
