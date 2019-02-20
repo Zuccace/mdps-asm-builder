@@ -40,7 +40,7 @@ Or alternatively see the source. ;)
 You can create more different files just by specifying them on command line:
 `some/path/to/build.sh my.asm my.xdelta my.bin.sha256 my.xdelta.sha256`
 Note that it's *not* neccessary to specify the binary (ROM) on the line.
-Just be sure to have correct extension. You need always need specify a subextension when creating hashes. Fore example: `game.bin.sha256` and  `game.bsdiff.sha256` are ok, while `game.sha256` **is not**, since the script cannot determine from where to calculate the hash.
+Just be sure to have correct extension. You always need specify a subextension when creating hashes. Fore example: `game.bin.sha256` and  `game.bsdiff.sha256` are ok, while `game.sha256` **is not**, since the script cannot determine from where to calculate the hash.
 
 You can place the script wherever you want.
 It should work from anywhere in the filesystem.

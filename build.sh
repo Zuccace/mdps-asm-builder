@@ -24,7 +24,8 @@ Also running this script outside of the directory where the assembly is allowed.
 
 $usage
 
-Where output may be *.bin *.bsdiff *.xdelta *.bdelta *.md5 *.sha1 *.sha244 *.sha256 *.sha384 *.sha512 ...
+Where output may be *.bin *.bsdiff *.xdelta *.bdelta ...
+Hashes are created by _appending_ hash extension to the filename.
 
 Switches:
 
@@ -41,7 +42,11 @@ Switches:
     --bsdiff --xdelta --bdelta
 
     Print checksums (may be quite noicy)
+    (Does not work at the moment)
     --sums
+
+    List all the supported hash functions and exit.
+    --list-hashes
 
     Does not delete temporary files.
     --keep-temp
@@ -97,6 +102,10 @@ check_dep() {
     else
         return 127
     fi
+}
+
+list_hashes() {
+    check_dep ${rhash:="rhash"} && rhash --list-hashes | awk '{$1 = tolower($1); gsub(/[^a-z0-9]/,"",$1); print $1}'
 }
 
 find_one() {
@@ -332,6 +341,10 @@ do
         --keep-temp)
             keeptemp=1
         ;;
+        --list-hashes)
+            list_hashes | paste -sd ' '
+            exit 0
+        ;;
         --help)
             echo "${help}"
             exit 0
@@ -431,7 +444,7 @@ unset ext
 eval "set -- $hasharray ''"
 # We have now a new $@ which contains sum/hash files to be generated.
 
-supported_hashes="$(rhash --list-hashes | awk '{$1 = tolower($1); gsub(/[^a-z0-9]/,"",$1); print $1}' | paste -sd '|')"
+supported_hashes="$(list_hashes | paste -sd '|')"
 
 while [ "$1" ]
 do
