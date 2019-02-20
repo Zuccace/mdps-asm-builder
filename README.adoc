@@ -58,5 +58,6 @@ Only Phantasy Star games are being tested.
 
 
 === TODO / Milestones
+ * Bring back IPS patching.
  * ??? (Suggest more features by https://github.com/Zuccace/mdps-asm-builder/issues/new[creating an issue]).
  * Clean up the code and publish first release.
