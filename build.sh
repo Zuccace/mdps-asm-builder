@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="1.0.0_alpha_rc1"
+version="1.0.0_alpha_rc2"
 
 this="${0##*/}"
 
@@ -135,7 +135,7 @@ ask_download() {
 # Path patching using awk.
 # While we're at it replace paths with absolute ones.
 # Why? I didn't find any simmple way to tell asl
-# from which diretory to search for includes,
+# from which directory to search for includes,
 # because there are many of them at least in case of PSII
 # and I just cannot give a root directory where all
 # the directories reside where the includes are.
@@ -326,7 +326,7 @@ do
             [ -e "$2" ] && orig_bin="$2" || errexit "No such file '${2}'."
             shift
         ;;
-        ---show-sums)
+        --sums)
             sums=true
         ;;
         --keep-temp)
@@ -408,7 +408,7 @@ do
     case "$ext" in # lovercase
         bin)
             out_bin="$1"
-        ;;
+    ;;
         bsdiff|xdelta|bdelta|ips)
             if [ -e "$orig_bin" ]
             then
@@ -438,63 +438,71 @@ do
     ext="$(echo "${1##*.}" | tr '[:upper:]' '[:lower:]')" # Hash(?) file extension
 
     # Kinda dirty...
-    if echo "$ext" | egrep -q "^(${supported_hashes})\$"
+    if echo "$ext" | egrep -q "^rhash|${supported_hashes}\$"
     then
         ref_file="${1%.*}"
         ref_file="${ref_file##*/}" # Needed when writing filename into hashfile.
-        subext="${ref_file##*.}" # Sub extension.
-        # TODO: Check current directory if a patch exists. If not then use value below.
-        temp_patch="${workdir}/${subext}"
-        temp_hash="${temp_patch}.${ext}"
-        temp_rhash="${workdir}/${subext}.rhash"
+        subext="$(echo "${ref_file##*.}" | tr '[:upper:]' '[:lower:]')" # Sub extension.
 
-        if [ -f "$temp_hash" ]
-        then
-            # We already have calculated the hash value. Just copy it to the right place.
-            cp "$temp_hash" "$1"
-        else
+        case "$subext" in 
+            bin|bsdiff|xdelta|bdelta|ips)
+                # TODO: Check current directory if a patch exists. If not then use value below.
+                # ... or maybe better not to trust on that.
+                temp_patch="${workdir}/${subext}"
+                temp_hash="${temp_patch}.${ext}"
+                temp_rhash="${workdir}/${subext}.rhash"
 
-            if [ "$subext" = "bin" ]
-            then
-                tohash="$temp_bin"
-            elif [ ! -f "$temp_patch" ]
-            then
-                # We don't have a file from where to calculate the hash.
-                if [ -e "$orig_bin" ]
+                if [ -f "$temp_hash" ]
                 then
-                    "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
+                    # We already have calculated the hash value. Just copy it to the right place.
+                    cp "$temp_hash" "$1"
                 else
-                    warn "Need an original binary (--orig-bin), because a temporary patch is needed to be able to create hash sum out of it."
-                    warn "Skipping creation of '$1'"
-                    shift
-                    continue
-                fi
-                tohash="$temp_patch"
-            fi
 
-            if check_dep "${rhash:="rhash"}"
-            then
-                "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
-                do
-                    echo "$(echo "$hash_line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$hash_line" | cut -d ' ' -f 1)"
-                done
-            else # Fallback to sha/md utils.
-                case "$ext" in
-                    sha*)
-                        if check_dep "${ext}sum"
+                    if [ "$subext" = "bin" ]
+                    then
+                        tohash="$temp_bin"
+                    elif [ ! -f "$temp_patch" ]
+                    then
+                        # We don't have a file from where to calculate the hash.
+                        if [ -e "$orig_bin" ]
                         then
-                            true
-                            # TODO: Generate sum with *sum tool.
+                            "create_${subext}" "$orig_bin" "$temp_bin" "$temp_patch"
                         else
-                            warn "No tool to generate ${ext}sum. To support all hash functions intall rhash or make sure it's in your PATH."
+                            warn "Need an original binary (--orig-bin), because a temporary patch is needed to be able to create hash sum out of it."
+                            warn "Skipping creation of '$1'"
+                            shift
+                            continue
                         fi
-                    ;;
-                esac
-            fi
-        fi
-        cp "$temp_hash" "$1"
+                        tohash="$temp_patch"
+                    fi
+
+                    if check_dep "${rhash:="rhash"}"
+                    then
+                        "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
+                        do
+                            echo "$(echo "$hash_line" | cut -d ' ' -f 2-)" > "${workdir}/${subext}.$(echo "$hash_line" | cut -d ' ' -f 1)"
+                        done
+                    else # Fallback to sha/md utils.
+                        case "$ext" in
+                            sha*)
+                                if check_dep "${ext}sum"
+                                then
+                                    echo "$(${ext}sum "$tohash" | cut -d ' ' -f 1)  ${ref_file}" > "${temp_hash}"
+                                else
+                                    warn "No tool to generate ${ext}sum. To support all hash functions intall rhash or make sure it's in your PATH."
+                                fi
+                            ;;
+                        esac
+                    fi
+                fi
+                cp "$temp_hash" "$1"
+            ;;
+            *)
+                warn "Unknown extension: ${subext}"
+            ;;
+        esac
     else
-        warn "File type on '${ext}' is unknown. Skipping..."
+        warn "File type of '${ext}' is unknown. Skipping..."
     fi
     shift
 done
