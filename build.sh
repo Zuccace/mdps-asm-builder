@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="1.0.0_alpha_rc4"
+version="1.0.0_alpha_rc5"
 
 this="${0##*/}"
 
@@ -93,8 +93,11 @@ push_arr() {
 #}
 
 check_dep() {
-    if [ -x "$(which "$1" 2> /dev/null)" ]
+    local x="$(which "$1" 2> /dev/null || echo -n "$1")"
+
+    if [ -f "$x" ] && [ "${x##*.}" = 'py' ] || [ -x "$x" ]
     then
+        msg "Found '$x'"
         return 0
     elif [ "$2" = "die" ]
     then
@@ -199,7 +202,7 @@ setup_helper() {
 }
 
 fix_bin_header() {
-    check_dep "${fixheader:="fixheader.py"}" || fixheader="$(find_one "fixheader.py" | head -n 1)" check_dep "$fixheader" die
+    check_dep "${fixheader:="fixheader.py"}" || { fixheader="$(find_one "fixheader.py" | head -n 1)" && check_dep "$fixheader" die; }
     check_dep python3 die
     python3 "$fixheader" "$1"
 }
