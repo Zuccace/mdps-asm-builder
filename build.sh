@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="1.0.0_alpha_rc2"
+version="1.0.0_alpha_rc3"
 
 this="${0##*/}"
 
