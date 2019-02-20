@@ -109,7 +109,7 @@ list_hashes() {
 }
 
 find_one() {
-    one="$(find "${includedir}" "$(dirname "$1")/helpers" -type f -iname "$1")" 2> /dev/null
+    one="$(find "${includedir}" "$(dirname "$0")/helpers" -type f -iname "$1")" 2> /dev/null
     if  [ "$(echo "$one" | wc -l)" -gt 1 ]
     then
         echo -n "$one"
@@ -198,17 +198,10 @@ setup_helper() {
     fi
 }
 
-# Be careful. fix_bin_header is this function and fixheader is the binary.
 fix_bin_header() {
-    # Choose if we want to fix the header.
-    if [ -x "${fixheader:=${helperdir}/fixheader}" ]
-    then
-        "$fixheader" "$1" && msg "Fixed the header..." || warn "Header fixing failed!"
-    else
-         setup_helper fixheader{,.cpp} "https://raw.githubusercontent.com/sonicretro/s2disasm/ab771f939679b27398d3bd45c3c390508b0d0a33/build_source/fixheader.cpp" \
-             && fix_bin_header "$1" \
-             || { rm -r "$workdir"; errexit 1 "Unable to set up the fixheader helper. You might need to do it by yourself. Aborting..."; }
-    fi
+    check_dep "${fixheader:="fixheader.py"}" || fixheader="$(find_one "fixheader.py" | head -n 1)" check_dep "$fixheader" die
+    check_dep python3 die
+    python3 "$fixheader" "$1"
 }
 
 setup_p2bin() {
