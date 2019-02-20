@@ -109,7 +109,7 @@ list_hashes() {
 }
 
 find_one() {
-    one="$(find "${includedir}" -type f -iname "$1")"
+    one="$(find "${includedir}" "$(dirname "$1")/helpers" -type f -iname "$1")" 2> /dev/null
     if  [ "$(echo "$one" | wc -l)" -gt 1 ]
     then
         echo -n "$one"
