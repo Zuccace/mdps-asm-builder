@@ -76,21 +76,12 @@ errexit() {
     exit "${ec:=1}"
 }
 
-# TODO: this function sets quotes in wrong way.
-# This essentially results in no hash sums created.
-# FIX ASAP. More info from: https://unix.stackexchange.com/questions/421158/how-to-use-pseudo-arrays-in-posix-shell-script
 push_arr() {
     for i in "$@"
     do
         printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' /"
     done
 }
-
-# Turns specially formatted variable into
-# an array that's accessible via "$@".
-#set_arr() {
-#    eval "set -- $* $(echo " ")"
-#}
 
 check_dep() {
     local x="$(which "$1" 2> /dev/null || echo -n "$1")"
