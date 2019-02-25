@@ -50,6 +50,7 @@ It should work from anywhere in the filesystem.
 http://segaretro.org/Kosinski_compression[Kosinski compression].
 It is totally unknown at the moment if the feature will ever
 be implemented into this project.
+ * This script **is not** coded to support filesnames with weird characters or _especially_ line breaks in them. (Please clean up your filenames with http://detox.sourceforge.net[detox]. ;) )
 
 == Also...
  * This build script might work with some other disassemblies too.
@@ -59,5 +60,6 @@ Only Phantasy Star games are being tested.
 
 === TODO / Milestones
  * Bring back IPS patching.
- * ??? (Suggest more features by https://github.com/Zuccace/mdps-asm-builder/issues/new[creating an issue]).
+ * Add LC_ALL="C" at least in front of find and any command that uses regexp to be able to handle non typical charaters in filenames.
  * Clean up the code and publish first release.
+ * ??? (Suggest more features by https://github.com/Zuccace/mdps-asm-builder/issues/new[creating an issue]).
