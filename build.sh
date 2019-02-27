@@ -274,6 +274,37 @@ create_ips() {
     fi
 }
 
+create_diff() {
+
+    # $1 = diff program
+    # $2 = old file
+    # $3 = new file
+    # $4 = patch file (destination)
+
+    local tp="$(basename "$1" .py)" # patch type, with possible '.py' removed
+    local wdtp="${workdir}/${tp}"
+
+    if check_dep "$1" die
+    then
+        if [ ! -f "$wdtp" ]
+        then
+            case "${tp}" in
+                bsdiff|bdelta)
+                    # These diff programs work lovely!
+                    "$1" "$2" "$3" "$wdtp"
+                ;;
+                xdelta)
+                    "$1" -f -e -S djw -9 -s "$2" "$3" "$wdtp"
+                ;;
+                ips)
+                    check_dep "python3" die && python3 "$1" "$2" "$3" "$wdtp"
+                ;;
+            esac
+        fi
+    [ "$wdtp" != "$4" ] && cp "$wdtp" "$4"
+    fi
+}
+
 ### Go trough CLI switches.
 while [ "${1:0:1}" = "-" ]
 do
