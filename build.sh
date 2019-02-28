@@ -56,6 +56,7 @@ Switches:
 # Sets the name of the assembly log file if not set from the environment.
 : ${ASlog:="AS.log"}
 
+: ${libexecdir:="/usr/share/libexec/mdps-asm-builder"}
 
 msg() { echo -e "$*"; }
 
@@ -83,27 +84,8 @@ push_arr() {
     done
 }
 
-check_dep() {
-    local x="$(which "$1" 2> /dev/null || echo -n "$1")"
-
-    if [ -f "$x" ] && [ "${x##*.}" = 'py' ] || [ -x "$x" ]
-    then
-        msg "Found '$x'"
-        return 0
-    elif [ "$2" = "die" ]
-    then
-        errexit 127 "Aborting: '$1' cannot be found or isn't an executable."
-    else
-        return 127
-    fi
-}
-
-list_hashes() {
-    check_dep ${rhash:="rhash"} && rhash --list-hashes | awk '{$1 = tolower($1); gsub(/[^a-z0-9]/,"",$1); print $1}'
-}
-
 find_one() {
-    one="$(find "${includedir}" "$(dirname "$0")/helpers" -type f -iname "$1")" 2> /dev/null
+    one="$(find "${includedir}" "$libexecdir" "$(dirname "$0")/helpers" -type f -name "$1")" 2> /dev/null
     if  [ "$(echo "$one" | wc -l)" -gt 1 ]
     then
         echo -n "$one"
@@ -116,6 +98,28 @@ find_one() {
     fi
 }
 
+check_dep() {
+    local x="$(which "$1" 2> /dev/null || echo -n "$1")"
+
+    if [ -f "$x" ] && [ "${x##*.}" = 'py' ] || [ -x "$x" ]
+    then
+        echo "$x"
+        return 0
+    elif echo "$1" | grep -q '^[^/]*$' &&  x="$(find_one "$1" | head -n 1)" && [ "$x" ] # TODO: check executable bit if not .py?
+    then
+        echo "$x"
+    elif [ "$2" = "die" ]
+    then
+        errexit 127 "Aborting: '$1' cannot be found or isn't an executable."
+    else
+        return 127
+    fi
+}
+
+list_hashes() {
+    check_dep ${rhash:="rhash"} > /dev/null && rhash --list-hashes | awk '{$1 = tolower($1); gsub(/[^a-z0-9]/,"",$1); print $1}'
+}
+
 ask_download() {
     # $1 = dest, $2 = uri
     bn="${1##*/}"
@@ -123,6 +127,7 @@ ask_download() {
     msg "Didn't found '${bn}'.\nProceed with downloading ${bn} and installing it into '${dn}'? [Y/n]"
     read answer && case "$answer" in
         [Yy]|[Yy][Ee][Ss])
+            check_dep 'wget' die > /dev/null
             wget -nv -O "$1" "$2" || { warn "Downloading of "$bn" failed."; return 1; }
         ;;
         [Nn][Oo]?)
@@ -162,7 +167,7 @@ build_bin() {
 
 setup_helper() {
     # $1 = destination, $2 = source file, $3 = source uri
-    if helper_compiler="$(which gcc 2> /dev/null)" || helper_compiler="$(which clang 2> /dev/null)"
+    if helper_compiler="$(check_dep "gcc" 2> /dev/null)" || helper_compiler="$(check_dep "clang" 2> /dev/null)"
     then
         helper_source="$(find_one "$2")"
         status="$?"
@@ -193,13 +198,14 @@ setup_helper() {
 }
 
 fix_bin_header() {
-    check_dep "${fixheader:="fixheader.py"}" || { fixheader="$(find_one "fixheader.py" | head -n 1)" && check_dep "$fixheader" die; }
-    check_dep python3 die
+    fixheader="$(check_dep "${fixheader:="fixheader.py"}" die)"
+    check_dep python3 die 2> /dev/null
     python3 "$fixheader" "$1"
 }
 
 setup_p2bin() {
     # Find source and compile the p2bin program if needed.
+    # TODO?: Maybe use check_dep?
     if [ ! -e "${p2bin:=${helperdir}/p2bin}" ]
     then
         setup_helper p2bin '*p2bin.c' || { rm -r "${workdir}"; errexit "Unable to create p2bin. Aborting..."; }
@@ -276,28 +282,38 @@ create_ips() {
 
 create_diff() {
 
-    # $1 = diff program
+    # $1 = diff program/format
     # $2 = old file
     # $3 = new file
     # $4 = patch file (destination)
 
-    local tp="$(basename "$1" .py)" # patch type, with possible '.py' removed
-    local wdtp="${workdir}/${tp}"
+    local p="$1" # ... as in program.
+    
+    case "$1" in
+        ips)
+            if ! p="$(check_dep 'lipx.py')"
+            then
+                ask_download "${helperdir}/lipx.py" 'https://raw.githubusercontent.com/kylon/Lipx/1c01fcff06f1015750ad5461d5c898cba692326d/lipx.py' \
+                && p="${helperdir}/lipx.py"
+            fi
+        ;;
+    esac
 
-    if check_dep "$1" die
+    if p="$(check_dep "$p" die)"
     then
+        local wdtp="${workdir}/${1}"
         if [ ! -f "$wdtp" ]
         then
-            case "${tp}" in
+            case "$1" in
                 bsdiff|bdelta)
                     # These diff programs work lovely!
-                    "$1" "$2" "$3" "$wdtp"
+                    "$p" "$2" "$3" "$wdtp"
                 ;;
                 xdelta)
-                    "$1" -f -e -S djw -9 -s "$2" "$3" "$wdtp"
+                    "$p" -f -e -S djw -9 -s "$2" "$3" "$wdtp"
                 ;;
                 ips)
-                    check_dep "python3" die && python3 "$1" "$2" "$3" "$wdtp"
+                    check_dep "python3" die && python3 "$p" -c "$2" "$3" "$wdtp"
                 ;;
             esac
         fi
@@ -443,6 +459,7 @@ do
         bsdiff|xdelta|bdelta|ips)
             if [ -e "$orig_bin" ]
             then
+                # create_diff ips "$orig_bin" "$temp_bin" "$1"
                 "create_${ext}" "$orig_bin" "$temp_bin" "$1"
             else
                 warn "Can't create $ext patch without a binary to compare to. Maybe use '--orig-bin'?"
