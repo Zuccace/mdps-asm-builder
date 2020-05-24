@@ -85,7 +85,7 @@ push_arr() {
 }
 
 find_one() {
-    one="$(find "${includedir}" "$libexecdir" "$(dirname "$0")/helpers" -type f -name "$1")" 2> /dev/null
+    one="$(find "${includedir}" "$libexecdir" "$(dirname "$0")/helpers" -type f -name "$1" 2> /dev/null)"
     if  [ "$(echo "$one" | wc -l)" -gt 1 ]
     then
         echo -n "$one"
@@ -173,7 +173,7 @@ setup_helper() {
         status="$?"
         if [ "$status" -eq 0 ]
         then
-            if "$helper_compiler" -O3 -w -o "${helperdir}/$1" "$helper_source"
+            if "$helper_compiler" -O2 -w -o "${helperdir}/$1" "$helper_source"
             then
                 msg "$1 compiled..."
             else
@@ -199,7 +199,7 @@ setup_helper() {
 
 fix_bin_header() {
     fixheader="$(check_dep "${fixheader:="fixheader.py"}" die)"
-    check_dep python3 die 2> /dev/null
+    check_dep python3 die > /dev/null
     python3 "$fixheader" "$1"
 }
 
@@ -219,7 +219,7 @@ setup_p2bin() {
 
 # Perhaps the most efficient binary diff algo there is.
 create_bsdiff() {
-    if check_dep "${bsdiff:="bsdiff"}" die
+    if check_dep "${bsdiff:="bsdiff"}" die > /dev/null
     then
         if [ -f "${workdir}/bsdiff" ] || "$bsdiff" "$1" "$2" "${workdir}/bsdiff"
         then
@@ -232,7 +232,7 @@ create_bsdiff() {
 
 # Xdelta is one of the most common binary diff programs.
 create_xdelta() {
-    if check_dep "${xdelta:="xdelta3"}" die
+    if check_dep "${xdelta:="xdelta3"}" die > /dev/null
     then
         if [ -f "${workdir}/xdelta" ] || "$xdelta" -f -e -S djw -9 -s "$1" "$2" "${workdir}/xdelta"
         then
@@ -245,7 +245,7 @@ create_xdelta() {
 
 # BDelta. https://github.com/jjwhitney/BDelta
 create_bdelta() {
-    if check_dep "${bdelta:="bdelta"}" die
+    if check_dep "${bdelta:="bdelta"}" die > /dev/null
     then
         if [ -f "${workdir}/bdelta" ] || "$bdelta" "$1" "$2" "${workdir}/bdelta"
         then
@@ -432,7 +432,7 @@ setup_p2bin
 
 # Patch and compile the assembly.
 path_patch "$1" > "$asmfile" && msg "Path patch applied..." || errexit "Patching failed. '$tempdir' -directory is left undeleted."
-check_dep "${asl:="asl"}" die
+check_dep "${asl:="asl"}" die > /dev/null
 if "${asl}" -xx -c -A -l -shareout "$temp_h" -o "$temp_p" "$asmfile" > "$temp_log" 2>&1
 then
     msg "Source compiled..."
@@ -524,7 +524,7 @@ do
                         tohash="$temp_patch"
                     fi
 
-                    if check_dep "${rhash:="rhash"}"
+                    if check_dep "${rhash:="rhash"}" > /dev/null
                     then
                         "$rhash" --bsd -a "$tohash" | tee "$temp_rhash" | awk -v "file=${ref_file}" '{algo = tolower($1); sub(/-/,"",algo); print algo, $4 "  " file}' | while read hash_line
                         do
@@ -533,7 +533,7 @@ do
                     else # Fallback to sha/md utils.
                         case "$ext" in
                             sha*)
-                                if check_dep "${ext}sum"
+                                if check_dep "${ext}sum" > /dev/null
                                 then
                                     echo "$(${ext}sum "$tohash" | cut -d ' ' -f 1)  ${ref_file}" > "${temp_hash}"
                                 else
